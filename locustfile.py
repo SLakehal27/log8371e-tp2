@@ -69,7 +69,7 @@ class KeycloakUser(HttpUser):
         with self.client.get(
             f"/admin/realms/{self.realm}/users",
             params={"username": user_name},
-            name="[GET] Get User ID",
+            name="[READ] Get User ID",
             catch_response=True
         ) as response:
             if response.status_code == 200:
@@ -108,29 +108,72 @@ class KeycloakUser(HttpUser):
                 response.failure(f"Failed to delete user: {response.status_code} {response.text}")
 
                 
-
-    # @task
-    # def create_client(self):
-    #     self.ensure_valid_token()
-    #     client_id = f"test_client_{uuid.uuid4()}"
+    @task
+    def client_endpoint(self):
+        self.ensure_valid_token()
+        client_id = f"test_client_{uuid.uuid4()}"
         
-    #     client_data = {
-    #         "clientId": client_id,
-    #     }
+        client_data = {
+            "clientId": client_id,
+        }
         
-    #     with self.client.post(
-    #         f"/admin/realms/{self.realm}/clients",
-    #         json=client_data,
-    #         name="[CREATE] Create Client",
-    #         catch_response=True
-    #     ) as response:
-    #         if response.status_code == 201:
-    #             response.success()
-    #         elif response.status_code == 409:
-    #             response.success()
-    #         else:
-    #             response.failure(f"Failed to create client: {response.status_code} {response.text}")
+        # Create Client
+        with self.client.post(
+            f"/admin/realms/{self.realm}/clients",
+            json=client_data,
+            name="[CREATE] Create Client",
+            catch_response=True
+        ) as response:
+            if response.status_code == 201:
+                response.success()
+            elif response.status_code == 409:
+                response.success()
+            else:
+                response.failure(f"Failed to create client: {response.status_code} {response.text}")
+                
+        # Get Client ID
+        with self.client.get(
+            f"/admin/realms/{self.realm}/clients",
+            params={"clientId": client_id},
+            name="[READ] Get Client ID",
+            catch_response=True
+        ) as response:
+            if response.status_code == 200:
+                clients = response.json()
+                if clients:
+                    client_uuid = clients[0]["id"]
+                    response.success()
+                else:
+                    response.failure(f"No client found with clientId {client_id}")
+            else:
+                response.failure(f"Failed to search for client: {response.status_code} {response.text}")
+                
+        # Update Client
+        updated_client_data = {
+            "name": "Updated Test Client"
+        }
 
+        with self.client.put(
+            f"/admin/realms/{self.realm}/clients/{client_uuid}",
+            json=updated_client_data,
+            name="[UPDATE] Update Client",
+            catch_response=True
+        ) as response:
+            if response.status_code == 204:
+                response.success()
+            else:
+                response.failure(f"Failed to update client: {response.status_code} {response.text}")
+                
+        # Delete Client
+        with self.client.delete(
+            f"/admin/realms/{self.realm}/clients/{client_uuid}",
+            name="[DELETE] Delete Client",
+            catch_response=True
+        ) as response:
+            if response.status_code == 204:
+                response.success()
+            else:
+                response.failure(f"Failed to delete client: {response.status_code} {response.text}")
 
     # @task
     # def create_realm_role(self):
