@@ -175,27 +175,66 @@ class KeycloakUser(HttpUser):
             else:
                 response.failure(f"Failed to delete client: {response.status_code} {response.text}")
 
-    # @task
-    # def create_realm_role(self):
-    #     self.ensure_valid_token()
-    #     role_name = f"test_role_{uuid.uuid4()}"
+    @task
+    def realm_endpoint(self):
+        self.ensure_valid_token()
+        role_name = f"test_role_{uuid.uuid4()}"
         
-    #     role_data = {
-    #         "name": role_name,
-    #     }
+        role_data = {
+            "name": role_name,
+        }
         
-    #     with self.client.post(
-    #         f"/admin/realms/{self.realm}/roles",
-    #         json=role_data,
-    #         name="[CREATE] Create Realm Role",
-    #         catch_response=True
-    #     ) as response:
-    #         if response.status_code == 201:
-    #             response.success()
-    #         elif response.status_code == 409:
-    #             response.success()
-    #         else:
-    #             response.failure(f"Failed to create role: {response.status_code} {response.text}")
+        # Create Realm Role
+        with self.client.post(
+            f"/admin/realms/{self.realm}/roles",
+            json=role_data,
+            name="[CREATE] Create Realm Role",
+            catch_response=True
+        ) as response:
+            if response.status_code == 201:
+                response.success()
+            elif response.status_code == 409:
+                response.success()
+            else:
+                response.failure(f"Failed to create role: {response.status_code} {response.text}")
+                
+        # Get Realm Role name
+        with self.client.get(
+            f"/admin/realms/{self.realm}/roles/{role_name}",
+            name="[READ] Get Realm Role",
+            catch_response=True
+        ) as response:
+            if response.status_code == 200:
+                response.success()
+            else:
+                response.failure(f"Failed to get role: {response.status_code} {response.text}")
+        
+        # Update Realm Role
+        updated_role_data = {
+            "name": role_name,
+            "description": "Updated Test Role"
+        }
+        with self.client.put(
+            f"/admin/realms/{self.realm}/roles/{role_name}",
+            json=updated_role_data,
+            name="[UPDATE] Update Realm Role",
+            catch_response=True
+        ) as response:
+            if response.status_code == 204:
+                response.success()
+            else:
+                response.failure(f"Failed to update role: {response.status_code} {response.text}")
+                
+        # Delete Realm Role
+        with self.client.delete(
+            f"/admin/realms/{self.realm}/roles/{role_name}",
+            name="[DELETE] Delete Realm Role",
+            catch_response=True
+        ) as response:
+            if response.status_code == 204:
+                response.success()
+            else:
+                response.failure(f"Failed to delete role: {response.status_code} {response.text}")
     
     # @task
     # def create_group(self):
