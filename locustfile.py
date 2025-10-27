@@ -304,25 +304,73 @@ class KeycloakUser(HttpUser):
             else:
                 response.failure(f"Failed to delete group: {response.status_code} {response.text}")
 
-    # @task
-    # def create_client_scope(self):
-    #     self.ensure_valid_token()
-    #     scope_name = f"test_scope_{uuid.uuid4()}"
+    @task
+    def client_scope_endpoint(self):
+        self.ensure_valid_token()
+        scope_name = f"test_scope_{uuid.uuid4()}"
         
-    #     scope_data = {
-    #         "name": scope_name,
-    #         "protocol": "openid-connect"
-    #     }
+        scope_data = {
+            "name": scope_name,
+            "protocol": "openid-connect"
+        }
         
-    #     with self.client.post(
-    #         f"/admin/realms/{self.realm}/client-scopes",
-    #         json=scope_data,
-    #         name="[CREATE] Create Client Scope",
-    #         catch_response=True
-    #     ) as response:
-    #         if response.status_code == 201:
-    #             response.success()
-    #         elif response.status_code == 409:
-    #             response.success()
-    #         else:
-    #             response.failure(f"Failed to create client scope: {response.status_code} {response.text}")
+        # Create Client Scope
+        with self.client.post(
+            f"/admin/realms/{self.realm}/client-scopes",
+            json=scope_data,
+            name="[CREATE] Create Client Scope",
+            catch_response=True
+        ) as response:
+            if response.status_code == 201:
+                response.success()
+            elif response.status_code == 409:
+                response.success()
+            else:
+                response.failure(f"Failed to create client scope: {response.status_code} {response.text}")
+                
+        # Get Client Scope ID
+        with self.client.get(
+            f"/admin/realms/{self.realm}/client-scopes",
+            name="[READ] Get Client Scope ID",
+            catch_response=True
+        ) as response:
+            if response.status_code == 200:
+                scopes = response.json()
+                scope_id = None
+                for scope in scopes:
+                    if scope["name"] == scope_name:
+                        scope_id = scope["id"]
+                        break
+                if scope_id:
+                    response.success()
+                else:
+                    response.failure(f"No client scope found with name {scope_name}")
+            else:
+                response.failure(f"Failed to get client scopes: {response.status_code} {response.text}")
+        
+        # Update Client Scope
+        updated_scope_data = {
+            "name": f"updated_{scope_name}",
+            "protocol": "openid-connect"
+        }
+        with self.client.put(
+            f"/admin/realms/{self.realm}/client-scopes/{scope_id}",
+            json=updated_scope_data,
+            name="[UPDATE] Update Client Scope",
+            catch_response=True
+        ) as response:
+            if response.status_code == 204:
+                response.success()
+            else:
+                response.failure(f"Failed to update client scope: {response.status_code} {response.text}")
+
+        # Delete Client Scope
+        with self.client.delete(
+            f"/admin/realms/{self.realm}/client-scopes/{scope_id}",
+            name="[DELETE] Delete Client Scope",
+            catch_response=True
+        ) as response:
+            if response.status_code == 204:
+                response.success()
+            else:
+                response.failure(f"Failed to delete client scope: {response.status_code} {response.text}")
