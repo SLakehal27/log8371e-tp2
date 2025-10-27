@@ -38,19 +38,20 @@ class KeycloakUser(HttpUser):
             self.get_keycloak_token()
     
     @task
-    def create_user(self):
+    def user_endpoint(self):
         self.ensure_valid_token()
-        user_id = f"test__user_{uuid.uuid4()}"
+        user_name = f"test__user_{uuid.uuid4()}"
 
         user_data = {
-            "username": user_id,
+            "username": user_name,
+            "enabled": True,
             "credentials": [{
                 "type": "password",
                 "value": "Test@123456",
                 "temporary": False
             }]
         }
-
+        # Create User
         with self.client.post(
             f"/admin/realms/{self.realm}/users",
             json=user_data,
@@ -63,92 +64,137 @@ class KeycloakUser(HttpUser):
                     response.success()
                 else:
                     response.failure(f"Failed to create user: {response.status_code} {response.text}")
-
-    @task
-    def create_client(self):
-        self.ensure_valid_token()
-        client_id = f"test_client_{uuid.uuid4()}"
-        
-        client_data = {
-            "clientId": client_id,
-        }
-        
-        with self.client.post(
-            f"/admin/realms/{self.realm}/clients",
-            json=client_data,
-            name="[CREATE] Create Client",
+                    
+        # Get user ID
+        with self.client.get(
+            f"/admin/realms/{self.realm}/users",
+            params={"username": user_name},
+            name="[GET] Get User ID",
             catch_response=True
         ) as response:
-            if response.status_code == 201:
-                response.success()
-            elif response.status_code == 409:
-                response.success()
+            if response.status_code == 200:
+                users = response.json()
+                if users:
+                    user_id = users[0]["id"]
+                    response.success()
+                else:
+                    response.failure(f"No user found with username {user_name}")
             else:
-                response.failure(f"Failed to create client: {response.status_code} {response.text}")
-
-    @task
-    def create_realm_role(self):
-        self.ensure_valid_token()
-        role_name = f"test_role_{uuid.uuid4()}"
-        
-        role_data = {
-            "name": role_name,
-        }
-        
-        with self.client.post(
-            f"/admin/realms/{self.realm}/roles",
-            json=role_data,
-            name="[CREATE] Create Realm Role",
-            catch_response=True
-        ) as response:
-            if response.status_code == 201:
-                response.success()
-            elif response.status_code == 409:
-                response.success()
-            else:
-                response.failure(f"Failed to create role: {response.status_code} {response.text}")
+                response.failure(f"Failed to search for user: {response.status_code} {response.text}")
     
-    @task
-    def create_group(self):
-        self.ensure_valid_token()
-        group_name = f"test_group_{uuid.uuid4()}"
-        
-        group_data = {
-            "name": group_name,
-        }
-        
-        with self.client.post(
-            f"/admin/realms/{self.realm}/groups",
-            json=group_data,
-            name="[CREATE] Create Group",
+        # Update User
+        updated_user_data = {
+            "firstName": "Test"}
+        with self.client.put(
+            f"/admin/realms/{self.realm}/users/{user_id}",
+            json=updated_user_data,
+            name="[UPDATE] Update User",
             catch_response=True
         ) as response:
-            if response.status_code == 201:
-                response.success()
-            elif response.status_code == 409:
+            if response.status_code == 204:
                 response.success()
             else:
-                response.failure(f"Failed to create group: {response.status_code} {response.text}")
+                response.failure(f"Failed to update user: {response.status_code} {response.text}")
+                
+        # Delete User
+        with self.client.delete(
+            f"/admin/realms/{self.realm}/users/{user_id}",
+            name="[DELETE] Delete User",
+            catch_response=True
+        ) as response:
+            if response.status_code == 204:
+                response.success()
+            else:
+                response.failure(f"Failed to delete user: {response.status_code} {response.text}")
 
-    @task
-    def create_client_scope(self):
-        self.ensure_valid_token()
-        scope_name = f"test_scope_{uuid.uuid4()}"
+                
+
+    # @task
+    # def create_client(self):
+    #     self.ensure_valid_token()
+    #     client_id = f"test_client_{uuid.uuid4()}"
         
-        scope_data = {
-            "name": scope_name,
-            "protocol": "openid-connect"
-        }
+    #     client_data = {
+    #         "clientId": client_id,
+    #     }
         
-        with self.client.post(
-            f"/admin/realms/{self.realm}/client-scopes",
-            json=scope_data,
-            name="[CREATE] Create Client Scope",
-            catch_response=True
-        ) as response:
-            if response.status_code == 201:
-                response.success()
-            elif response.status_code == 409:
-                response.success()
-            else:
-                response.failure(f"Failed to create client scope: {response.status_code} {response.text}")
+    #     with self.client.post(
+    #         f"/admin/realms/{self.realm}/clients",
+    #         json=client_data,
+    #         name="[CREATE] Create Client",
+    #         catch_response=True
+    #     ) as response:
+    #         if response.status_code == 201:
+    #             response.success()
+    #         elif response.status_code == 409:
+    #             response.success()
+    #         else:
+    #             response.failure(f"Failed to create client: {response.status_code} {response.text}")
+
+
+    # @task
+    # def create_realm_role(self):
+    #     self.ensure_valid_token()
+    #     role_name = f"test_role_{uuid.uuid4()}"
+        
+    #     role_data = {
+    #         "name": role_name,
+    #     }
+        
+    #     with self.client.post(
+    #         f"/admin/realms/{self.realm}/roles",
+    #         json=role_data,
+    #         name="[CREATE] Create Realm Role",
+    #         catch_response=True
+    #     ) as response:
+    #         if response.status_code == 201:
+    #             response.success()
+    #         elif response.status_code == 409:
+    #             response.success()
+    #         else:
+    #             response.failure(f"Failed to create role: {response.status_code} {response.text}")
+    
+    # @task
+    # def create_group(self):
+    #     self.ensure_valid_token()
+    #     group_name = f"test_group_{uuid.uuid4()}"
+        
+    #     group_data = {
+    #         "name": group_name,
+    #     }
+        
+    #     with self.client.post(
+    #         f"/admin/realms/{self.realm}/groups",
+    #         json=group_data,
+    #         name="[CREATE] Create Group",
+    #         catch_response=True
+    #     ) as response:
+    #         if response.status_code == 201:
+    #             response.success()
+    #         elif response.status_code == 409:
+    #             response.success()
+    #         else:
+    #             response.failure(f"Failed to create group: {response.status_code} {response.text}")
+
+    # @task
+    # def create_client_scope(self):
+    #     self.ensure_valid_token()
+    #     scope_name = f"test_scope_{uuid.uuid4()}"
+        
+    #     scope_data = {
+    #         "name": scope_name,
+    #         "protocol": "openid-connect"
+    #     }
+        
+    #     with self.client.post(
+    #         f"/admin/realms/{self.realm}/client-scopes",
+    #         json=scope_data,
+    #         name="[CREATE] Create Client Scope",
+    #         catch_response=True
+    #     ) as response:
+    #         if response.status_code == 201:
+    #             response.success()
+    #         elif response.status_code == 409:
+    #             response.success()
+    #         else:
+    #             response.failure(f"Failed to create client scope: {response.status_code} {response.text}")
