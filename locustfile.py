@@ -236,27 +236,73 @@ class KeycloakUser(HttpUser):
             else:
                 response.failure(f"Failed to delete role: {response.status_code} {response.text}")
     
-    # @task
-    # def create_group(self):
-    #     self.ensure_valid_token()
-    #     group_name = f"test_group_{uuid.uuid4()}"
+    @task
+    def group_endpoint(self):
+        self.ensure_valid_token()
+        group_name = f"test_group_{uuid.uuid4()}"
         
-    #     group_data = {
-    #         "name": group_name,
-    #     }
+        group_data = {
+            "name": group_name,
+        }
+        # Create Group
+        with self.client.post(
+            f"/admin/realms/{self.realm}/groups",
+            json=group_data,
+            name="[CREATE] Create Group",
+            catch_response=True
+        ) as response:
+            if response.status_code == 201:
+                response.success()
+            elif response.status_code == 409:
+                response.success()
+            else:
+                response.failure(f"Failed to create group: {response.status_code} {response.text}")
+                
+        # Get Group ID
+        with self.client.get(
+            f"/admin/realms/{self.realm}/groups",
+            name="[READ] Get Group ID",
+            catch_response=True
+        ) as response:
+            if response.status_code == 200:
+                groups = response.json()
+                group_id = None
+                for group in groups:
+                    if group["name"] == group_name:
+                        group_id = group["id"]
+                        break
+                if group_id:
+                    response.success()
+                else:
+                    response.failure(f"No group found with name {group_name}")
+            else:
+                response.failure(f"Failed to get groups: {response.status_code} {response.text}")
         
-    #     with self.client.post(
-    #         f"/admin/realms/{self.realm}/groups",
-    #         json=group_data,
-    #         name="[CREATE] Create Group",
-    #         catch_response=True
-    #     ) as response:
-    #         if response.status_code == 201:
-    #             response.success()
-    #         elif response.status_code == 409:
-    #             response.success()
-    #         else:
-    #             response.failure(f"Failed to create group: {response.status_code} {response.text}")
+        # Update Group
+        updated_group_data = {
+            "name": f"updated_{group_name}",
+        }
+        with self.client.put(
+            f"/admin/realms/{self.realm}/groups/{group_id}",
+            json=updated_group_data,
+            name="[UPDATE] Update Group",
+            catch_response=True
+        ) as response:
+            if response.status_code == 204:
+                response.success()
+            else:
+                response.failure(f"Failed to update group: {response.status_code} {response.text}")
+        
+        # Delete Group
+        with self.client.delete(
+            f"/admin/realms/{self.realm}/groups/{group_id}",
+            name="[DELETE] Delete Group",
+            catch_response=True
+        ) as response:
+            if response.status_code == 204:
+                response.success()
+            else:
+                response.failure(f"Failed to delete group: {response.status_code} {response.text}")
 
     # @task
     # def create_client_scope(self):
