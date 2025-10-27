@@ -1,0 +1,22 @@
+# LOG8371E - Lab 2
+
+The second lab of LOG8371E involving load testing on Keycloak's API.
+
+## Dependencies
+
+To run this locustfile, you need to have Python and locust installed.
+
+```
+pip3 install locust
+locust -V
+```
+
+## Runnning the program
+
+To run this locally, all you need is :
+
+```
+locust
+```
+
+The locust instance will be available on http://localhost:8089

@@ -14,8 +14,8 @@ class KeycloakUser(HttpUser):
                 "username" : "admin",
                 "password" : "password",
                 "grant_type": "password",
-                "client_id": "myclient", # Depends on your client name
-                "client_secret": "9ZekauFZlkrk92uvgFO5WYX72Evcwoqa" # Depends on your generated client
+                "client_id": "myclient", # Depends on your custom client name
+                "client_secret": "" # Replace with your Keycloak client's secret
             }
         )
         if (tokenResponse.status_code != 200):
