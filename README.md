@@ -16,6 +16,8 @@ locust -V
 To run this locally, all you need is :
 
 ```
+git clone https://github.com/SLakehal27/log8371e-tp2.git
+cd log8371e-tp2
 locust
 ```
 
