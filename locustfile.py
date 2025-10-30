@@ -16,7 +16,7 @@ class KeycloakUser(HttpUser):
             "/realms/master/protocol/openid-connect/token",
             data={
                 "username" : "admin",
-                "password" : "admin",
+                "password" : "password",
                 "grant_type": "password",
                 "client_id": "admin-cli",
             }
@@ -41,7 +41,7 @@ class KeycloakUser(HttpUser):
     def user_endpoint(self):
         self.ensure_valid_token()
         user_name = f"test__user_{uuid.uuid4()}"
-
+        user_id = ""
         user_data = {
             "username": user_name,
             "enabled": True,
@@ -116,6 +116,7 @@ class KeycloakUser(HttpUser):
         client_data = {
             "clientId": client_id,
         }
+        client_uuid = ""
         
         # Create Client
         with self.client.post(
@@ -244,6 +245,9 @@ class KeycloakUser(HttpUser):
         group_data = {
             "name": group_name,
         }
+
+        group_id = ""
+
         # Create Group
         with self.client.post(
             f"/admin/realms/{self.realm}/groups",
@@ -313,6 +317,8 @@ class KeycloakUser(HttpUser):
             "name": scope_name,
             "protocol": "openid-connect"
         }
+
+        scope_id = ""
         
         # Create Client Scope
         with self.client.post(
