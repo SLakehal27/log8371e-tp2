@@ -15,8 +15,8 @@ class KeycloakUser(HttpUser):
         tokenResponse = self.client.post(
             "/realms/master/protocol/openid-connect/token",
             data={
-                "username" : "ralph",
-                "password" : "123",
+                "username" : "admin",
+                "password" : "admin",
                 "grant_type": "password",
                 "client_id": "admin-cli",
             }
