@@ -11,7 +11,7 @@ pip3 install locust
 locust -V
 ```
 
-## Runnning the program
+## Running the program
 
 To run this locally, all you need is :
 
